@@ -74,6 +74,13 @@ class RowIterable
             for (int channel = 0; channel < page.getChannelCount(); channel++) {
                 Type type = types.get(channel);
                 Block block = page.getBlock(channel);
+                // Caused by: java.lang.IllegalArgumentException: Invalid position 1 in block with 1 positions
+                // why does block onlly have one position when we're asking for at least 12?
+                // It's not an off by one error. It's that there's only one row ID in the block.
+                // That's why it works with LIMIT 1 and not LIMIT 2
+                // maybe an issue with compressed dictionary blocks or something like that?
+                // only some tables/rows use dictionary blocks
+                // and exception changes from LIMIT 2 to 3
                 values.add(type.getObjectValue(session.getSqlFunctionProperties(), block, position));
             }
             return Collections.unmodifiableList(values);
