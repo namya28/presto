@@ -174,8 +174,6 @@ public class OrcSelectiveRecordReader
             List<OrcType> types,
             Optional<OrcDecompressor> decompressor,
             Optional<EncryptionLibrary> encryptionLibrary,
-            Map<Integer, Integer> dwrfEncryptionGroupMap,
-            Map<Integer, Slice> intermediateKeyMetadata,
             int rowsInRowGroup,
             DateTimeZone hiveStorageTimeZone,
             OrcRecordReaderOptions options,
@@ -185,10 +183,8 @@ public class OrcSelectiveRecordReader
             OrcAggregatedMemoryContext systemMemoryUsage,
             Optional<OrcWriteValidation> writeValidation,
             int initialBatchSize,
-            StripeMetadataSource stripeMetadataSource,
             boolean cacheable,
-            RuntimeStats runtimeStats,
-            Optional<OrcFileIntrospector> fileIntrospector)
+            RuntimeStats runtimeStats)
     {
         super(includedColumns,
                 requiredSubfields,
@@ -215,8 +211,6 @@ public class OrcSelectiveRecordReader
                 types,
                 decompressor,
                 encryptionLibrary,
-                dwrfEncryptionGroupMap,
-                intermediateKeyMetadata,
                 rowsInRowGroup,
                 hiveStorageTimeZone,
                 hiveWriterVersion,
@@ -228,10 +222,8 @@ public class OrcSelectiveRecordReader
                 systemMemoryUsage,
                 writeValidation,
                 initialBatchSize,
-                stripeMetadataSource,
                 cacheable,
-                runtimeStats,
-                fileIntrospector);
+                runtimeStats);
 
         // Hive column indices can't be used to index into arrays because they are negative
         // for partition and hidden columns. Hence, we create synthetic zero-based indices.

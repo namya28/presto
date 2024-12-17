@@ -52,9 +52,9 @@ public class ByteOutputStream
 
     private boolean closed;
 
-    public ByteOutputStream(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor)
+    public ByteOutputStream(ColumnWriterOptions columnWriterOptions)
     {
-        this(new OrcOutputBuffer(columnWriterOptions, dwrfEncryptor));
+        this(new OrcOutputBuffer(columnWriterOptions));
     }
 
     public ByteOutputStream(OrcOutputBuffer buffer)

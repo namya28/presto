@@ -38,9 +38,9 @@ public class FloatOutputStream
 
     private boolean closed;
 
-    public FloatOutputStream(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor)
+    public FloatOutputStream(ColumnWriterOptions columnWriterOptions)
     {
-        this.buffer = new OrcOutputBuffer(columnWriterOptions, dwrfEncryptor);
+        this.buffer = new OrcOutputBuffer(columnWriterOptions);
     }
 
     public void writeFloat(float value)

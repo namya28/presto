@@ -77,7 +77,6 @@ public class MapColumnWriter
             int column,
             int sequence,
             ColumnWriterOptions columnWriterOptions,
-            Optional<DwrfDataEncryptor> dwrfEncryptor,
             OrcEncoding orcEncoding,
             ColumnWriter keyWriter,
             ColumnWriter valueWriter,
@@ -92,9 +91,9 @@ public class MapColumnWriter
         this.columnEncoding = new ColumnEncoding(orcEncoding == DWRF ? DIRECT : DIRECT_V2, 0);
         this.keyWriter = requireNonNull(keyWriter, "keyWriter is null");
         this.valueWriter = requireNonNull(valueWriter, "valueWriter is null");
-        this.lengthStream = createLengthOutputStream(columnWriterOptions, dwrfEncryptor, orcEncoding);
-        this.presentStream = new PresentOutputStream(columnWriterOptions, dwrfEncryptor);
-        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions, dwrfEncryptor);
+        this.lengthStream = createLengthOutputStream(columnWriterOptions, orcEncoding);
+        this.presentStream = new PresentOutputStream(columnWriterOptions);
+        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions);
     }
 
     @Override

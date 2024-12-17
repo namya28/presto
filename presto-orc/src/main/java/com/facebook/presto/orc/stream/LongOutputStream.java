@@ -28,28 +28,22 @@ import static com.facebook.presto.orc.metadata.Stream.StreamKind.LENGTH;
 public interface LongOutputStream
         extends ValueOutputStream<LongStreamCheckpoint>
 {
-    static LongOutputStream createLengthOutputStream(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor, OrcEncoding orcEncoding)
+    static LongOutputStream createLengthOutputStream(ColumnWriterOptions columnWriterOptions, OrcEncoding orcEncoding)
     {
-        return createLongOutputStream(columnWriterOptions, dwrfEncryptor, orcEncoding, LENGTH);
+        return createLongOutputStream(columnWriterOptions, orcEncoding, LENGTH);
     }
 
-    static LongOutputStream createDataOutputStream(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor, OrcEncoding orcEncoding)
+    static LongOutputStream createDataOutputStream(ColumnWriterOptions columnWriterOptions, OrcEncoding orcEncoding)
     {
-        return createLongOutputStream(columnWriterOptions, dwrfEncryptor, orcEncoding, DATA);
+        return createLongOutputStream(columnWriterOptions, orcEncoding, DATA);
     }
 
     static LongOutputStream createLongOutputStream(
             ColumnWriterOptions columnWriterOptions,
-            Optional<DwrfDataEncryptor> dwrfEncryptor,
             OrcEncoding orcEncoding,
             StreamKind streamKind)
     {
-        if (orcEncoding == DWRF) {
-            return new LongOutputStreamV1(columnWriterOptions, dwrfEncryptor, false, streamKind);
-        }
-        else {
             return new LongOutputStreamV2(columnWriterOptions, false, streamKind);
-        }
     }
 
     void writeLong(long value);

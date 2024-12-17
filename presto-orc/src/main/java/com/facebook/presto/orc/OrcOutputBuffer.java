@@ -59,7 +59,6 @@ public class OrcOutputBuffer
     private final int minCompressibleSize;
 
     private final CompressionBufferPool compressionBufferPool;
-    private final Optional<DwrfDataEncryptor> dwrfEncryptor;
     @Nullable
     private final Compressor compressor;
 
@@ -76,10 +75,9 @@ public class OrcOutputBuffer
      */
     private int bufferPosition;
 
-    public OrcOutputBuffer(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor)
+    public OrcOutputBuffer(ColumnWriterOptions columnWriterOptions)
     {
         requireNonNull(columnWriterOptions, "columnWriterOptions is null");
-        requireNonNull(dwrfEncryptor, "dwrfEncryptor is null");
         int maxBufferSize = columnWriterOptions.getCompressionMaxBufferSize();
         checkArgument(maxBufferSize > PAGE_HEADER_SIZE, "maximum buffer size should be greater than page header size");
 
@@ -93,7 +91,6 @@ public class OrcOutputBuffer
         this.slice = wrappedBuffer(buffer);
 
         this.compressionBufferPool = columnWriterOptions.getCompressionBufferPool();
-        this.dwrfEncryptor = requireNonNull(dwrfEncryptor, "dwrfEncryptor is null");
 
         if (compressionKind == CompressionKind.NONE) {
             this.compressor = null;
@@ -144,7 +141,7 @@ public class OrcOutputBuffer
 
     public long getCheckpoint()
     {
-        if (compressor == null && !dwrfEncryptor.isPresent()) {
+        if (compressor == null) {
             return size();
         }
         return InputStreamCheckpoint.createInputStreamCheckpoint(getCompressedOutputSize(), bufferPosition);
@@ -482,7 +479,7 @@ public class OrcOutputBuffer
             initCompressedOutputStream();
         }
 
-        if (compressor == null && !dwrfEncryptor.isPresent()) {
+        if (compressor == null ) {
             compressedOutputStream.write(chunk, offset, length);
             return;
         }
@@ -503,15 +500,15 @@ public class OrcOutputBuffer
                     offset = 0;
                 }
             }
-            if (dwrfEncryptor.isPresent()) {
-                chunk = dwrfEncryptor.get().encrypt(chunk, offset, length);
-                length = chunk.length;
-                offset = 0;
-                // size after encryption should not exceed what the 3 byte header can hold (2^23)
-                if (length > 8388608) {
-                    throw new OrcEncryptionException("Encrypted data size %s exceeds limit of 2^23", length);
-                }
-            }
+//            if (dwrfEncryptor.isPresent()) {
+//                chunk = dwrfEncryptor.get().encrypt(chunk, offset, length);
+//                length = chunk.length;
+//                offset = 0;
+//                // size after encryption should not exceed what the 3 byte header can hold (2^23)
+//                if (length > 8388608) {
+//                    throw new OrcEncryptionException("Encrypted data size %s exceeds limit of 2^23", length);
+//                }
+//            }
 
             int header = isCompressed ? length << 1 : (length << 1) + 1;
             writeChunkedOutput(chunk, offset, length, header);

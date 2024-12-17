@@ -135,8 +135,6 @@ public class DwrfMetadataReader
     @Override
     public Footer readFooter(HiveWriterVersion hiveWriterVersion,
             InputStream inputStream,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
-            DwrfKeyProvider dwrfKeyProvider,
             OrcDataSource orcDataSource,
             Optional<OrcDecompressor> decompressor)
             throws IOException
@@ -150,12 +148,12 @@ public class DwrfMetadataReader
         Optional<DwrfEncryption> encryption = footer.hasEncryption() ? Optional.of(toEncryption(footer.getEncryption())) : Optional.empty();
         Optional<List<Integer>> stripeCacheOffsets = Optional.of(footer.getStripeCacheOffsetsList());
 
-        if (encryption.isPresent()) {
-            Map<Integer, Slice> keys = dwrfKeyProvider.getIntermediateKeys(types);
-            EncryptionLibrary encryptionLibrary = dwrfEncryptionProvider.getEncryptionLibrary(encryption.get().getKeyProvider());
-            fileStats = decryptAndCombineFileStatistics(hiveWriterVersion, encryption.get(), encryptionLibrary, fileStats, fileStripes, keys, orcDataSource, decompressor);
-        }
-        runtimeStats.addMetricValue("DwrfReadFooterTimeNanos", RuntimeUnit.NANO, THREAD_MX_BEAN.getCurrentThreadCpuTime() - cpuStart);
+//        if (encryption.isPresent()) {
+//            Map<Integer, Slice> keys = dwrfKeyProvider.getIntermediateKeys(types);
+//            EncryptionLibrary encryptionLibrary = dwrfEncryptionProvider.getEncryptionLibrary(encryption.get().getKeyProvider());
+//            fileStats = decryptAndCombineFileStatistics(hiveWriterVersion, encryption.get(), encryptionLibrary, fileStats, fileStripes, keys, orcDataSource, decompressor);
+//        }
+//        runtimeStats.addMetricValue("DwrfReadFooterTimeNanos", RuntimeUnit.NANO, THREAD_MX_BEAN.getCurrentThreadCpuTime() - cpuStart);
 
         OptionalLong rawSize = footer.hasRawDataSize() ? OptionalLong.of(footer.getRawDataSize()) : OptionalLong.empty();
         return new Footer(
@@ -165,9 +163,7 @@ public class DwrfMetadataReader
                 fileStripes,
                 types,
                 fileStats,
-                toUserMetadata(footer.getMetadataList()),
-                encryption,
-                stripeCacheOffsets);
+                toUserMetadata(footer.getMetadataList()));
     }
 
     private List<ColumnStatistics> decryptAndCombineFileStatistics(HiveWriterVersion hiveWriterVersion,
@@ -189,8 +185,7 @@ public class DwrfMetadataReader
         ColumnStatistics[] decryptedFileStats = fileStats.toArray(new ColumnStatistics[0]);
         List<EncryptionGroup> encryptionGroups = dwrfEncryption.getEncryptionGroups();
         List<byte[]> stripeKeys = null;
-        if (!fileStripes.isEmpty() && !fileStripes.get(0).getKeyMetadata().isEmpty()) {
-            stripeKeys = fileStripes.get(0).getKeyMetadata();
+        if (!fileStripes.isEmpty()) {
             checkState(stripeKeys.size() == encryptionGroups.size(),
                     "Number of keys in the first stripe must be the same as the number of encryption groups");
         }
@@ -291,11 +286,10 @@ public class DwrfMetadataReader
     {
         ImmutableList.Builder<StripeInformation> stripeInfoBuilder = ImmutableList.builderWithExpectedSize(stripeInformationList.size());
         List<byte[]> previousKeyMetadata = ImmutableList.of();
-        for (DwrfProto.StripeInformation dwrfStripeInfo : stripeInformationList) {
-            StripeInformation prestoStripeInfo = toStripeInformation(dwrfStripeInfo, previousKeyMetadata);
-            stripeInfoBuilder.add(prestoStripeInfo);
-            previousKeyMetadata = prestoStripeInfo.getKeyMetadata();
-        }
+//        for (DwrfProto.StripeInformation dwrfStripeInfo : stripeInformationList) {
+//            StripeInformation prestoStripeInfo = toStripeInformation(dwrfStripeInfo, previousKeyMetadata);
+//            stripeInfoBuilder.add(prestoStripeInfo);
+//        }
         return stripeInfoBuilder.build();
     }
 
@@ -314,8 +308,7 @@ public class DwrfMetadataReader
                 stripeInformation.getIndexLength(),
                 stripeInformation.getDataLength(),
                 stripeInformation.getFooterLength(),
-                rawDataSize,
-                keyMetadata);
+                rawDataSize);
     }
 
     @Override

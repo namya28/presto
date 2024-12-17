@@ -146,8 +146,6 @@ public class OrcMetadataReader
     @Override
     public Footer readFooter(HiveWriterVersion hiveWriterVersion,
             InputStream inputStream,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
-            DwrfKeyProvider dwrfKeyProvider,
             OrcDataSource orcDataSource,
             Optional<OrcDecompressor> decompressor)
             throws IOException
@@ -164,9 +162,7 @@ public class OrcMetadataReader
                 toStripeInformation(footer.getStripesList()),
                 toType(footer.getTypesList()),
                 toColumnStatistics(hiveWriterVersion, footer.getStatisticsList(), false),
-                toUserMetadata(footer.getMetadataList()),
-                Optional.empty(),
-                Optional.empty());
+                toUserMetadata(footer.getMetadataList()));
     }
 
     private static List<StripeInformation> toStripeInformation(List<OrcProto.StripeInformation> types)
@@ -184,8 +180,7 @@ public class OrcMetadataReader
                 stripeInformation.getIndexLength(),
                 stripeInformation.getDataLength(),
                 stripeInformation.getFooterLength(),
-                OptionalLong.empty(),
-                ImmutableList.of());
+                OptionalLong.empty());
     }
 
     @Override

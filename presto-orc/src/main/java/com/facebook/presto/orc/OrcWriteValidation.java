@@ -86,7 +86,6 @@ import static com.facebook.presto.common.type.VarbinaryType.VARBINARY;
 import static com.facebook.presto.orc.OrcWriteValidation.OrcWriteValidationMode.BOTH;
 import static com.facebook.presto.orc.OrcWriteValidation.OrcWriteValidationMode.DETAILED;
 import static com.facebook.presto.orc.OrcWriteValidation.OrcWriteValidationMode.HASHED;
-import static com.facebook.presto.orc.metadata.DwrfMetadataWriter.STATIC_METADATA;
 import static com.facebook.presto.orc.metadata.OrcMetadataReader.maxStringTruncateToValidRange;
 import static com.facebook.presto.orc.metadata.OrcMetadataReader.minStringTruncateToValidRange;
 import static com.facebook.presto.orc.metadata.statistics.ColumnStatistics.mergeColumnStatistics;
@@ -184,7 +183,7 @@ public class OrcWriteValidation
     {
         // Filter out metadata value statically added by the DWRF writer
         Map<String, Slice> filteredMetadata = actualMetadata.entrySet().stream()
-                .filter(entry -> !STATIC_METADATA.containsKey(entry.getKey()))
+//                .filter(entry -> !STATIC_METADATA.containsKey(entry.getKey()))
                 .collect(toImmutableMap(Entry::getKey, Entry::getValue));
 
         if (!metadata.equals(filteredMetadata)) {

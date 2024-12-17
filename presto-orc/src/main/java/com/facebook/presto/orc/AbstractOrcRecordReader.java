@@ -86,7 +86,6 @@ abstract class AbstractOrcRecordReader<T extends StreamReader>
     private final long splitLength;
     private final Set<Integer> presentColumns;
     private final long maxBlockBytes;
-    private final Optional<EncryptionLibrary> encryptionLibrary;
     private final Map<Integer, Integer> dwrfEncryptionGroupMap;
     private final Map<Integer, Slice> intermediateKeyMetadata;
     private long currentPosition;
@@ -99,8 +98,6 @@ abstract class AbstractOrcRecordReader<T extends StreamReader>
     private final StripeReader stripeReader;
     private int currentStripe = -1;
     private OrcAggregatedMemoryContext currentStripeSystemMemoryContext;
-    private Optional<DwrfEncryptionInfo> dwrfEncryptionInfo = Optional.empty();
-
     private final long fileRowCount;
     private final List<Long> stripeFilePositions;
     private long filePosition;
@@ -114,15 +111,6 @@ abstract class AbstractOrcRecordReader<T extends StreamReader>
     private long maxCombinedBytesPerRow;
 
     private final Map<String, Slice> userMetadata;
-
-    private final Optional<OrcWriteValidation> writeValidation;
-    private final Optional<OrcWriteValidation.WriteChecksumBuilder> writeChecksumBuilder;
-    private final Optional<OrcWriteValidation.StatisticsValidation> rowGroupStatisticsValidation;
-    private final Optional<OrcWriteValidation.StatisticsValidation> stripeStatisticsValidation;
-    private final Optional<OrcWriteValidation.StatisticsValidation> fileStatisticsValidation;
-    private final Optional<OrcFileIntrospector> fileIntrospector;
-
-    private final RuntimeStats runtimeStats;
 
     public AbstractOrcRecordReader(
             Map<Integer, Type> includedColumns,
@@ -139,8 +127,6 @@ abstract class AbstractOrcRecordReader<T extends StreamReader>
             List<OrcType> types,
             Optional<OrcDecompressor> decompressor,
             Optional<EncryptionLibrary> encryptionLibrary,
-            Map<Integer, Integer> dwrfEncryptionGroupMap,
-            Map<Integer, Slice> columnToIntermediateKeyMap,
             int rowsInRowGroup,
             DateTimeZone hiveStorageTimeZone,
             PostScript.HiveWriterVersion hiveWriterVersion,
@@ -152,10 +138,8 @@ abstract class AbstractOrcRecordReader<T extends StreamReader>
             OrcAggregatedMemoryContext systemMemoryUsage,
             Optional<OrcWriteValidation> writeValidation,
             int initialBatchSize,
-            StripeMetadataSource stripeMetadataSource,
             boolean cacheable,
-            RuntimeStats runtimeStats,
-            Optional<OrcFileIntrospector> fileIntrospector)
+            RuntimeStats runtimeStats)
     {
         requireNonNull(includedColumns, "includedColumns is null");
         requireNonNull(predicate, "predicate is null");

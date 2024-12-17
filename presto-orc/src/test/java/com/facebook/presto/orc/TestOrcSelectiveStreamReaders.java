@@ -33,7 +33,6 @@ import java.util.stream.IntStream;
 
 import static com.facebook.presto.common.type.VarcharType.VARCHAR;
 import static com.facebook.presto.orc.NoOpOrcWriterStats.NOOP_WRITER_STATS;
-import static com.facebook.presto.orc.OrcTester.Format.DWRF;
 import static com.facebook.presto.orc.OrcTester.Format.ORC_11;
 import static com.facebook.presto.orc.OrcTester.Format.ORC_12;
 import static com.facebook.presto.orc.OrcTester.assertBlockEquals;
@@ -52,7 +51,7 @@ import static org.testng.Assert.assertEquals;
 
 public class TestOrcSelectiveStreamReaders
 {
-    private Set<OrcTester.Format> formats = ImmutableSet.of(ORC_12, ORC_11, DWRF);
+    private Set<OrcTester.Format> formats = ImmutableSet.of(ORC_12, ORC_11);
     private Set<CompressionKind> compressions = ImmutableSet.of(NONE, SNAPPY, ZLIB, LZ4, ZSTD);
 
     /**
@@ -81,9 +80,9 @@ public class TestOrcSelectiveStreamReaders
 
             for (CompressionKind compression : compressions) {
                 TempFile tempFile = new TempFile();
-                writeOrcColumnsPresto(tempFile.getFile(), format, compression, Optional.empty(), types, values, NOOP_WRITER_STATS);
+                writeOrcColumnsPresto(tempFile.getFile(), compression, types, values, NOOP_WRITER_STATS);
 
-                OrcPredicate orcPredicate = createOrcPredicate(types, values, DWRF, false);
+                OrcPredicate orcPredicate = createOrcPredicate(types, values, false);
                 Map<Integer, Type> includedColumns = IntStream.range(0, types.size())
                         .boxed()
                         .collect(toImmutableMap(Function.identity(), types::get));

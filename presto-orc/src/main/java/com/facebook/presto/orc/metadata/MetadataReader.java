@@ -36,8 +36,6 @@ public interface MetadataReader
 
     Footer readFooter(HiveWriterVersion hiveWriterVersion,
             InputStream inputStream,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
-            DwrfKeyProvider dwrfKeyProvider,
             OrcDataSource orcDataSource,
             Optional<OrcDecompressor> decompressor)
             throws IOException;

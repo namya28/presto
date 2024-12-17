@@ -57,10 +57,10 @@ public class LongOutputStreamV1
 
     private boolean closed;
 
-    public LongOutputStreamV1(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor, boolean signed, StreamKind streamKind)
+    public LongOutputStreamV1(ColumnWriterOptions columnWriterOptions, boolean signed, StreamKind streamKind)
     {
         this.streamKind = requireNonNull(streamKind, "streamKind is null");
-        this.buffer = new OrcOutputBuffer(columnWriterOptions, dwrfEncryptor);
+        this.buffer = new OrcOutputBuffer(columnWriterOptions);
         this.signed = signed;
     }
 

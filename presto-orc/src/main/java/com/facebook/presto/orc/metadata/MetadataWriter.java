@@ -27,12 +27,10 @@ public interface MetadataWriter
             int footerLength,
             int metadataLength,
             CompressionKind compression,
-            int compressionBlockSize,
-            Optional<DwrfStripeCacheData> dwrfStripeCacheData)
-            throws IOException;
+            int compressionBlockSize);
 
-    int writeDwrfStripeCache(SliceOutput output, Optional<DwrfStripeCacheData> dwrfStripeCacheData)
-            throws IOException;
+//    int writeDwrfStripeCache(SliceOutput output, Optional<DwrfStripeCacheData> dwrfStripeCacheData)
+//            throws IOException;
 
     int writeMetadata(SliceOutput output, Metadata metadata)
             throws IOException;

@@ -43,9 +43,9 @@ public class PresentOutputStream
 
     private boolean closed;
 
-    public PresentOutputStream(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor)
+    public PresentOutputStream(ColumnWriterOptions columnWriterOptions)
     {
-        this.buffer = new OrcOutputBuffer(columnWriterOptions, dwrfEncryptor);
+        this.buffer = new OrcOutputBuffer(columnWriterOptions);
     }
 
     public void writeBoolean(boolean value)

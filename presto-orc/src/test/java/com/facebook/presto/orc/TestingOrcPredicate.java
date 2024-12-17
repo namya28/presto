@@ -50,7 +50,6 @@ import static com.facebook.presto.common.type.StandardTypes.ROW;
 import static com.facebook.presto.common.type.TimestampType.TIMESTAMP;
 import static com.facebook.presto.common.type.TimestampType.TIMESTAMP_MICROSECONDS;
 import static com.facebook.presto.common.type.TinyintType.TINYINT;
-import static com.facebook.presto.orc.OrcTester.Format.DWRF;
 import static com.google.common.base.Predicates.equalTo;
 import static com.google.common.base.Predicates.notNull;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -71,16 +70,16 @@ public final class TestingOrcPredicate
     {
     }
 
-    public static OrcPredicate createOrcPredicate(List<Type> types, List<List<?>> values, Format format, boolean isHiveWriter)
+    public static OrcPredicate createOrcPredicate(List<Type> types, List<List<?>> values, boolean isHiveWriter)
     {
         List<OrcPredicate> orcPredicates = IntStream.range(0, types.size())
-                .mapToObj(i -> createOrcPredicate(i, types.get(i), values.get(i), format, isHiveWriter))
+                .mapToObj(i -> createOrcPredicate(i, types.get(i), values.get(i), isHiveWriter))
                 .collect(toImmutableList());
 
         return new MultiOrcPredicate(orcPredicates);
     }
 
-    public static OrcPredicate createOrcPredicate(int columnIndex, Type type, Iterable<?> values, Format format, boolean isHiveWriter)
+    public static OrcPredicate createOrcPredicate(int columnIndex, Type type, Iterable<?> values, boolean isHiveWriter)
     {
         List<Object> expectedValues = newArrayList(values);
         if (BOOLEAN.equals(type)) {
@@ -131,7 +130,7 @@ public final class TestingOrcPredicate
             return new BasicOrcPredicate<>(columnIndex, expectedValues, Object.class, false);
         }
         if (type instanceof VarcharType) {
-            return new StringOrcPredicate(columnIndex, expectedValues, format, isHiveWriter);
+            return new StringOrcPredicate(columnIndex, expectedValues, isHiveWriter);
         }
         if (type instanceof CharType) {
             return new CharOrcPredicate(columnIndex, expectedValues, false);
@@ -402,13 +401,11 @@ public final class TestingOrcPredicate
     public static class StringOrcPredicate
             extends BasicOrcPredicate<String>
     {
-        private final Format format;
         private final boolean isHiveWriter;
 
-        public StringOrcPredicate(int columnIndex, Iterable<?> expectedValues, Format format, boolean isHiveWriter)
+        public StringOrcPredicate(int columnIndex, Iterable<?> expectedValues, boolean isHiveWriter)
         {
             super(columnIndex, expectedValues, String.class, false);
-            this.format = format;
             this.isHiveWriter = isHiveWriter;
         }
 
@@ -459,7 +456,7 @@ public final class TestingOrcPredicate
                 else {
                     Slice chunkMin = Ordering.natural().nullsLast().min(slices);
                     Slice chunkMax = Ordering.natural().nullsFirst().max(slices);
-                    if (format == DWRF && isHiveWriter) {
+                    if (isHiveWriter) {
                         // We use the OLD open source DWRF writer for tests which uses UTF-16be for string stats. These are widened by the our reader.
                         if (columnStatistics.getStringStatistics().getMin().compareTo(chunkMin) > 0) {
                             return false;

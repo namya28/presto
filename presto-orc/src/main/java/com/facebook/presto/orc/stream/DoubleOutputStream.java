@@ -38,9 +38,9 @@ public class DoubleOutputStream
 
     private boolean closed;
 
-    public DoubleOutputStream(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor)
+    public DoubleOutputStream(ColumnWriterOptions columnWriterOptions)
     {
-        this.buffer = new OrcOutputBuffer(columnWriterOptions, dwrfEncryptor);
+        this.buffer = new OrcOutputBuffer(columnWriterOptions);
     }
 
     public void writeDouble(double value)

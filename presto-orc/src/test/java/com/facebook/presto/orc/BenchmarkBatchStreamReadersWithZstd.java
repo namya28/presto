@@ -57,7 +57,6 @@ import static com.facebook.presto.metadata.FunctionAndTypeManager.createTestFunc
 import static com.facebook.presto.orc.DwrfEncryptionProvider.NO_ENCRYPTION;
 import static com.facebook.presto.orc.NoopOrcAggregatedMemoryContext.NOOP_ORC_AGGREGATED_MEMORY_CONTEXT;
 import static com.facebook.presto.orc.OrcReader.INITIAL_BATCH_SIZE;
-import static com.facebook.presto.orc.OrcTester.Format.DWRF;
 import static com.facebook.presto.orc.OrcTester.writeOrcColumnPresto;
 import static com.facebook.presto.orc.metadata.CompressionKind.ZSTD;
 import static com.google.common.io.Files.createTempDir;
@@ -118,7 +117,6 @@ public class BenchmarkBatchStreamReadersWithZstd
         private Type type;
         private File temporaryDirectory;
         private File orcFile;
-        private final OrcTester.Format format = DWRF;
 
         @SuppressWarnings("unused")
         @Param({
@@ -158,7 +156,7 @@ public class BenchmarkBatchStreamReadersWithZstd
 
             temporaryDirectory = createTempDir();
             orcFile = new File(temporaryDirectory, randomUUID().toString());
-            writeOrcColumnPresto(orcFile, format, ZSTD, type, createValues());
+            writeOrcColumnPresto(orcFile, ZSTD, type, createValues());
         }
 
         @TearDown
