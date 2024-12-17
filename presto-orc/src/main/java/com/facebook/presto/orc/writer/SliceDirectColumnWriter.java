@@ -80,7 +80,6 @@ public class SliceDirectColumnWriter
             int sequence,
             Type type,
             ColumnWriterOptions columnWriterOptions,
-            Optional<DwrfDataEncryptor> dwrfEncryptor,
             OrcEncoding orcEncoding,
             Supplier<SliceColumnStatisticsBuilder> statisticsBuilderSupplier,
             MetadataWriter metadataWriter)
@@ -89,16 +88,15 @@ public class SliceDirectColumnWriter
         checkArgument(sequence >= 0, "sequence is negative");
         checkArgument(type instanceof AbstractVariableWidthType, "type is not an AbstractVariableWidthType");
         requireNonNull(columnWriterOptions, "columnWriterOptions is null");
-        requireNonNull(dwrfEncryptor, "dwrfEncryptor is null");
         requireNonNull(metadataWriter, "metadataWriter is null");
         this.column = column;
         this.sequence = sequence;
         this.compressed = columnWriterOptions.getCompressionKind() != NONE;
         this.columnEncoding = new ColumnEncoding(orcEncoding == DWRF ? DIRECT : DIRECT_V2, 0);
-        this.lengthStream = createLengthOutputStream(columnWriterOptions, dwrfEncryptor, orcEncoding);
-        this.dataStream = new ByteArrayOutputStream(columnWriterOptions, dwrfEncryptor);
-        this.presentStream = new PresentOutputStream(columnWriterOptions, dwrfEncryptor);
-        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions, dwrfEncryptor);
+        this.lengthStream = createLengthOutputStream(columnWriterOptions,orcEncoding);
+        this.dataStream = new ByteArrayOutputStream(columnWriterOptions);
+        this.presentStream = new PresentOutputStream(columnWriterOptions);
+        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions);
         this.statisticsBuilderSupplier = statisticsBuilderSupplier;
         statisticsBuilder = statisticsBuilderSupplier.get();
     }

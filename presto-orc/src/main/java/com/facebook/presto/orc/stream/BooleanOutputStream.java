@@ -40,9 +40,9 @@ public class BooleanOutputStream
     private int data;
     private boolean closed;
 
-    public BooleanOutputStream(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor)
+    public BooleanOutputStream(ColumnWriterOptions columnWriterOptions)
     {
-        this(new ByteOutputStream(columnWriterOptions, dwrfEncryptor));
+        this(new ByteOutputStream(columnWriterOptions));
     }
 
     public BooleanOutputStream(OrcOutputBuffer buffer)

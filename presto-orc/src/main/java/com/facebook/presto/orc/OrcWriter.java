@@ -128,15 +128,12 @@ public class OrcWriter
     private final CompressedMetadataWriter metadataWriter;
     private final DateTimeZone hiveStorageTimeZone;
 
-    private final DwrfEncryptionProvider dwrfEncryptionProvider;
-    private final DwrfEncryptionInfo dwrfEncryptionInfo;
-    private final Optional<DwrfWriterEncryption> dwrfWriterEncryption;
 
     private final List<ClosedStripe> closedStripes = new ArrayList<>();
     private final List<OrcType> orcTypes;
 
     private final List<ColumnWriter> columnWriters;
-    private final Optional<DwrfStripeCacheWriter> dwrfStripeCacheWriter;
+
     private final int dictionaryMaxMemoryBytes;
     private final DictionaryCompressionOptimizer dictionaryCompressionOptimizer;
     @Nullable
@@ -164,8 +161,6 @@ public class OrcWriter
             List<Type> types,
             OrcEncoding orcEncoding,
             CompressionKind compressionKind,
-            Optional<DwrfWriterEncryption> encryption,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
             OrcWriterOptions options,
             Map<String, String> userMetadata,
             DateTimeZone hiveStorageTimeZone,
@@ -180,8 +175,6 @@ public class OrcWriter
                 Optional.empty(),
                 orcEncoding,
                 compressionKind,
-                encryption,
-                dwrfEncryptionProvider,
                 options,
                 userMetadata,
                 hiveStorageTimeZone,
@@ -197,8 +190,6 @@ public class OrcWriter
             Optional<List<OrcType>> inputOrcTypes,
             OrcEncoding orcEncoding,
             CompressionKind compressionKind,
-            Optional<DwrfWriterEncryption> encryption,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
             OrcWriterOptions options,
             Map<String, String> userMetadata,
             DateTimeZone hiveStorageTimeZone,
@@ -251,57 +242,57 @@ public class OrcWriter
                 .putAll(requireNonNull(userMetadata, "userMetadata is null"))
                 .put(PRESTO_ORC_WRITER_VERSION_METADATA_KEY, PRESTO_ORC_WRITER_VERSION)
                 .build();
-        this.metadataWriter = new CompressedMetadataWriter(orcEncoding.createMetadataWriter(), columnWriterOptions, Optional.empty());
+        this.metadataWriter = new CompressedMetadataWriter(orcEncoding.createMetadataWriter(), columnWriterOptions);
         this.hiveStorageTimeZone = requireNonNull(hiveStorageTimeZone, "hiveStorageTimeZone is null");
         this.stats = requireNonNull(stats, "stats is null");
         this.streamSizeHelper = new StreamSizeHelper(orcTypes, columnWriterOptions.getFlattenedNodes(), columnWriterOptions.isMapStatisticsEnabled());
 
         recordValidation(validation -> validation.setColumnNames(columnNames));
 
-        dwrfWriterEncryption = requireNonNull(encryption, "encryption is null");
-        this.dwrfEncryptionProvider = requireNonNull(dwrfEncryptionProvider, "dwrfEncryptionProvider is null");
-        if (dwrfWriterEncryption.isPresent()) {
-            List<WriterEncryptionGroup> writerEncryptionGroups = dwrfWriterEncryption.get().getWriterEncryptionGroups();
-            Map<Integer, Integer> nodeToGroupMap = createNodeToGroupMap(
-                    writerEncryptionGroups
-                            .stream()
-                            .map(WriterEncryptionGroup::getNodes)
-                            .collect(toImmutableList()),
-                    orcTypes);
-            EncryptionLibrary encryptionLibrary = dwrfEncryptionProvider.getEncryptionLibrary(dwrfWriterEncryption.get().getKeyProvider());
-            List<byte[]> dataEncryptionKeys = writerEncryptionGroups.stream()
-                    .map(group -> encryptionLibrary.generateDataEncryptionKey(group.getIntermediateKeyMetadata().getBytes()))
-                    .collect(toImmutableList());
-            Map<Integer, DwrfDataEncryptor> dwrfEncryptors = IntStream.range(0, writerEncryptionGroups.size())
-                    .boxed()
-                    .collect(toImmutableMap(
-                            groupId -> groupId,
-                            groupId -> new DwrfDataEncryptor(dataEncryptionKeys.get(groupId), encryptionLibrary)));
-
-            List<byte[]> encryptedKeyMetadatas = IntStream.range(0, writerEncryptionGroups.size())
-                    .boxed()
-                    .map(groupId -> encryptionLibrary.encryptKey(
-                            writerEncryptionGroups.get(groupId).getIntermediateKeyMetadata().getBytes(),
-                            dataEncryptionKeys.get(groupId),
-                            0,
-                            dataEncryptionKeys.get(groupId).length))
-                    .collect(toImmutableList());
-            this.dwrfEncryptionInfo = new DwrfEncryptionInfo(dwrfEncryptors, encryptedKeyMetadatas, nodeToGroupMap);
-        }
-        else {
-            this.dwrfEncryptionInfo = UNENCRYPTED;
-        }
-
-        // set DwrfStripeCacheWriter for DWRF files if it's enabled through the options
-        if (orcEncoding == DWRF) {
-            this.dwrfStripeCacheWriter = options.getDwrfStripeCacheOptions()
-                    .map(dwrfWriterOptions -> new DwrfStripeCacheWriter(
-                            dwrfWriterOptions.getStripeCacheMode(),
-                            dwrfWriterOptions.getStripeCacheMaxSize()));
-        }
-        else {
-            this.dwrfStripeCacheWriter = Optional.empty();
-        }
+//        dwrfWriterEncryption = requireNonNull(encryption, "encryption is null");
+//        this.dwrfEncryptionProvider = requireNonNull(dwrfEncryptionProvider, "dwrfEncryptionProvider is null");
+//        if (dwrfWriterEncryption.isPresent()) {
+//            List<WriterEncryptionGroup> writerEncryptionGroups = dwrfWriterEncryption.get().getWriterEncryptionGroups();
+//            Map<Integer, Integer> nodeToGroupMap = createNodeToGroupMap(
+//                    writerEncryptionGroups
+//                            .stream()
+//                            .map(WriterEncryptionGroup::getNodes)
+//                            .collect(toImmutableList()),
+//                    orcTypes);
+//            EncryptionLibrary encryptionLibrary = dwrfEncryptionProvider.getEncryptionLibrary(dwrfWriterEncryption.get().getKeyProvider());
+//            List<byte[]> dataEncryptionKeys = writerEncryptionGroups.stream()
+//                    .map(group -> encryptionLibrary.generateDataEncryptionKey(group.getIntermediateKeyMetadata().getBytes()))
+//                    .collect(toImmutableList());
+//            Map<Integer, DwrfDataEncryptor> dwrfEncryptors = IntStream.range(0, writerEncryptionGroups.size())
+//                    .boxed()
+//                    .collect(toImmutableMap(
+//                            groupId -> groupId,
+//                            groupId -> new DwrfDataEncryptor(dataEncryptionKeys.get(groupId), encryptionLibrary)));
+//
+//            List<byte[]> encryptedKeyMetadatas = IntStream.range(0, writerEncryptionGroups.size())
+//                    .boxed()
+//                    .map(groupId -> encryptionLibrary.encryptKey(
+//                            writerEncryptionGroups.get(groupId).getIntermediateKeyMetadata().getBytes(),
+//                            dataEncryptionKeys.get(groupId),
+//                            0,
+//                            dataEncryptionKeys.get(groupId).length))
+//                    .collect(toImmutableList());
+//            this.dwrfEncryptionInfo = new DwrfEncryptionInfo(dwrfEncryptors, encryptedKeyMetadatas, nodeToGroupMap);
+//        }
+//        else {
+//            this.dwrfEncryptionInfo = UNENCRYPTED;
+//        }
+//
+//        // set DwrfStripeCacheWriter for DWRF files if it's enabled through the options
+//        if (orcEncoding == DWRF) {
+//            this.dwrfStripeCacheWriter = options.getDwrfStripeCacheOptions()
+//                    .map(dwrfWriterOptions -> new DwrfStripeCacheWriter(
+//                            dwrfWriterOptions.getStripeCacheMode(),
+//                            dwrfWriterOptions.getStripeCacheMaxSize()));
+//        }
+//        else {
+//            this.dwrfStripeCacheWriter = Optional.empty();
+//        }
 
         // create column writers
         OrcType rootType = orcTypes.get(0);
@@ -319,7 +310,6 @@ public class OrcWriter
                     columnWriterOptions,
                     orcEncoding,
                     hiveStorageTimeZone,
-                    dwrfEncryptionInfo,
                     orcEncoding.createMetadataWriter());
             columnWriters.add(columnWriter);
 
@@ -556,25 +546,25 @@ public class OrcWriter
             for (StreamDataOutput indexStream : streams) {
                 // The ordering is critical because the stream only contain a length with no offset.
                 // if the previous stream was part of a different encryption group, need to specify an offset so we know the column order
-                Optional<Integer> encryptionGroup = dwrfEncryptionInfo.getGroupByNodeId(indexStream.getStream().getColumn());
-                if (encryptionGroup.isPresent()) {
-                    Stream stream = previousEncryptionGroup == encryptionGroup.get() ? indexStream.getStream() : indexStream.getStream().withOffset(offset);
-                    encryptedStreams.put(encryptionGroup.get(), stream);
-                    previousEncryptionGroup = encryptionGroup.get();
-                }
-                else {
-                    Stream stream = previousEncryptionGroup == -1 ? indexStream.getStream() : indexStream.getStream().withOffset(offset);
-                    unencryptedStreams.add(stream);
-                    previousEncryptionGroup = -1;
-                }
+//                Optional<Integer> encryptionGroup = dwrfEncryptionInfo.getGroupByNodeId(indexStream.getStream().getColumn());
+//                if (encryptionGroup.isPresent()) {
+//                    Stream stream = previousEncryptionGroup == encryptionGroup.get() ? indexStream.getStream() : indexStream.getStream().withOffset(offset);
+//                    encryptedStreams.put(encryptionGroup.get(), stream);
+//                    previousEncryptionGroup = encryptionGroup.get();
+//                }
+//                else {
+//                    Stream stream = previousEncryptionGroup == -1 ? indexStream.getStream() : indexStream.getStream().withOffset(offset);
+//                    unencryptedStreams.add(stream);
+//                    previousEncryptionGroup = -1;
+//                }
                 offset += indexStream.size();
                 indexLength += indexStream.size();
             }
         }
 
-        if (dwrfStripeCacheWriter.isPresent()) {
-            dwrfStripeCacheWriter.get().addIndexStreams(ImmutableList.copyOf(indexStreams), indexLength);
-        }
+//        if (dwrfStripeCacheWriter.isPresent()) {
+//            dwrfStripeCacheWriter.get().addIndexStreams(ImmutableList.copyOf(indexStreams), indexLength);
+//        }
 
         // data streams (sorted by size)
         long dataLength = 0;
@@ -600,17 +590,17 @@ public class OrcWriter
         for (StreamDataOutput dataStream : dataStreams) {
             // The ordering is critical because the stream only contains a length with no offset.
             // if the previous stream was part of a different encryption group, need to specify an offset so we know the column order
-            Optional<Integer> encryptionGroup = dwrfEncryptionInfo.getGroupByNodeId(dataStream.getStream().getColumn());
-            if (encryptionGroup.isPresent()) {
-                Stream stream = previousEncryptionGroup == encryptionGroup.get() ? dataStream.getStream() : dataStream.getStream().withOffset(offset);
-                encryptedStreams.put(encryptionGroup.get(), stream);
-                previousEncryptionGroup = encryptionGroup.get();
-            }
-            else {
-                Stream stream = previousEncryptionGroup == -1 ? dataStream.getStream() : dataStream.getStream().withOffset(offset);
-                unencryptedStreams.add(stream);
-                previousEncryptionGroup = -1;
-            }
+//            Optional<Integer> encryptionGroup = dwrfEncryptionInfo.getGroupByNodeId(dataStream.getStream().getColumn());
+//            if (encryptionGroup.isPresent()) {
+//                Stream stream = previousEncryptionGroup == encryptionGroup.get() ? dataStream.getStream() : dataStream.getStream().withOffset(offset);
+//                encryptedStreams.put(encryptionGroup.get(), stream);
+//                previousEncryptionGroup = encryptionGroup.get();
+//            }
+//            else {
+//                Stream stream = previousEncryptionGroup == -1 ? dataStream.getStream() : dataStream.getStream().withOffset(offset);
+//                unencryptedStreams.add(stream);
+//                previousEncryptionGroup = -1;
+//            }
             offset += dataStream.size();
         }
 
@@ -621,25 +611,25 @@ public class OrcWriter
         columnStatistics.put(0, new ColumnStatistics((long) stripeRowCount, null, stripeRawSize, null));
 
         Map<Integer, ColumnEncoding> unencryptedColumnEncodings = columnEncodings.entrySet().stream()
-                .filter(entry -> !dwrfEncryptionInfo.getGroupByNodeId(entry.getKey()).isPresent())
+//                .filter(entry -> !dwrfEncryptionInfo.getGroupByNodeId(entry.getKey()).isPresent())
                 .collect(toImmutableMap(Entry::getKey, Entry::getValue));
 
         Map<Integer, ColumnEncoding> encryptedColumnEncodings = columnEncodings.entrySet().stream()
-                .filter(entry -> dwrfEncryptionInfo.getGroupByNodeId(entry.getKey()).isPresent())
+//                .filter(entry -> dwrfEncryptionInfo.getGroupByNodeId(entry.getKey()).isPresent())
                 .collect(toImmutableMap(Entry::getKey, Entry::getValue));
         List<Slice> encryptedGroups = createEncryptedGroups(encryptedStreams, encryptedColumnEncodings);
 
         StripeFooter stripeFooter = new StripeFooter(unencryptedStreams, unencryptedColumnEncodings, encryptedGroups);
         Slice footer = metadataWriter.writeStripeFooter(stripeFooter);
         DataOutput footerDataOutput = createDataOutput(footer);
-        dwrfStripeCacheWriter.ifPresent(stripeCacheWriter -> stripeCacheWriter.addStripeFooter(createDataOutput(footer)));
+//        dwrfStripeCacheWriter.ifPresent(stripeCacheWriter -> stripeCacheWriter.addStripeFooter(createDataOutput(footer)));
 
         // create final stripe statistics
         StripeStatistics statistics = new StripeStatistics(toDenseList(columnStatistics, orcTypes.size()));
 
         recordValidation(validation -> validation.addStripeStatistics(stripeStartOffset, statistics));
 
-        StripeInformation stripeInformation = new StripeInformation(stripeRowCount, stripeStartOffset, indexLength, dataLength, footer.length(), OptionalLong.of(stripeRawSize), dwrfEncryptionInfo.getEncryptedKeyMetadatas());
+        StripeInformation stripeInformation = new StripeInformation(stripeRowCount, stripeStartOffset, indexLength, dataLength, footer.length(), OptionalLong.of(stripeRawSize));
         ClosedStripe closedStripe = new ClosedStripe(stripeInformation, statistics);
         closedStripes.add(closedStripe);
         closedStripesRetainedBytes += closedStripe.getRetainedSizeInBytes();
@@ -667,10 +657,10 @@ public class OrcWriter
         for (int i = 0; i < encryptedStreams.keySet().size(); i++) {
             int groupId = i;
             Map<Integer, ColumnEncoding> groupColumnEncodings = encryptedColumnEncodings.entrySet().stream()
-                    .filter(entry -> dwrfEncryptionInfo.getGroupByNodeId(entry.getKey()).orElseThrow(() -> new VerifyError("missing group for encryptedColumn")) == groupId)
+//                    .filter(entry -> dwrfEncryptionInfo.getGroupByNodeId(entry.getKey()).orElseThrow(() -> new VerifyError("missing group for encryptedColumn")) == groupId)
                     .collect(toImmutableMap(Entry::getKey, Entry::getValue));
-            DwrfDataEncryptor dwrfDataEncryptor = dwrfEncryptionInfo.getEncryptorByGroupId(i);
-            OrcOutputBuffer buffer = new OrcOutputBuffer(columnWriterOptions, Optional.of(dwrfDataEncryptor));
+//            DwrfDataEncryptor dwrfDataEncryptor = dwrfEncryptionInfo.getEncryptorByGroupId(i);
+            OrcOutputBuffer buffer = new OrcOutputBuffer(columnWriterOptions);
             toStripeEncryptionGroup(
                     new StripeEncryptionGroup(
                             ImmutableList.copyOf(encryptedStreams.get(i)),
@@ -734,35 +724,35 @@ public class OrcWriter
         unencryptedStats = new ArrayList<>();
         Map<Integer, Map<Integer, Slice>> encryptedStats = new HashMap<>();
         addStatsRecursive(fileStats, 0, new HashMap<>(), unencryptedStats, encryptedStats);
-        Optional<DwrfEncryption> dwrfEncryption;
-        if (dwrfWriterEncryption.isPresent()) {
-            ImmutableList.Builder<EncryptionGroup> encryptionGroupBuilder = ImmutableList.builder();
-            List<WriterEncryptionGroup> writerEncryptionGroups = dwrfWriterEncryption.get().getWriterEncryptionGroups();
-            for (int i = 0; i < writerEncryptionGroups.size(); i++) {
-                WriterEncryptionGroup group = writerEncryptionGroups.get(i);
-                Map<Integer, Slice> groupStats = encryptedStats.get(i);
-                encryptionGroupBuilder.add(
-                        new EncryptionGroup(
-                                group.getNodes(),
-                                Optional.empty(), // reader will just use key metadata from the stripe
-                                group.getNodes().stream()
-                                        .map(groupStats::get)
-                                        .collect(toList())));
-            }
-            dwrfEncryption = Optional.of(
-                    new DwrfEncryption(
-                            dwrfWriterEncryption.get().getKeyProvider(),
-                            encryptionGroupBuilder.build()));
-        }
-        else {
-            dwrfEncryption = Optional.empty();
-        }
+//        Optional<DwrfEncryption> dwrfEncryption;
+//        if (dwrfWriterEncryption.isPresent()) {
+//            ImmutableList.Builder<EncryptionGroup> encryptionGroupBuilder = ImmutableList.builder();
+//            List<WriterEncryptionGroup> writerEncryptionGroups = dwrfWriterEncryption.get().getWriterEncryptionGroups();
+//            for (int i = 0; i < writerEncryptionGroups.size(); i++) {
+//                WriterEncryptionGroup group = writerEncryptionGroups.get(i);
+//                Map<Integer, Slice> groupStats = encryptedStats.get(i);
+//                encryptionGroupBuilder.add(
+//                        new EncryptionGroup(
+//                                group.getNodes(),
+//                                Optional.empty(), // reader will just use key metadata from the stripe
+//                                group.getNodes().stream()
+//                                        .map(groupStats::get)
+//                                        .collect(toList())));
+//            }
+//            dwrfEncryption = Optional.of(
+//                    new DwrfEncryption(
+//                            dwrfWriterEncryption.get().getKeyProvider(),
+//                            encryptionGroupBuilder.build()));
+//        }
+//        else {
+//            dwrfEncryption = Optional.empty();
+//        }
 
-        Optional<DwrfStripeCacheData> dwrfStripeCacheData = dwrfStripeCacheWriter.map(DwrfStripeCacheWriter::getDwrfStripeCacheData);
-        Slice dwrfStripeCacheSlice = metadataWriter.writeDwrfStripeCache(dwrfStripeCacheData);
-        outputData.add(createDataOutput(dwrfStripeCacheSlice));
+//        Optional<DwrfStripeCacheData> dwrfStripeCacheData = dwrfStripeCacheWriter.map(DwrfStripeCacheWriter::getDwrfStripeCacheData);
+//        Slice dwrfStripeCacheSlice = metadataWriter.writeDwrfStripeCache(dwrfStripeCacheData);
+//        outputData.add(createDataOutput(dwrfStripeCacheSlice));
 
-        Optional<List<Integer>> dwrfStripeCacheOffsets = dwrfStripeCacheWriter.map(DwrfStripeCacheWriter::getOffsets);
+//        Optional<List<Integer>> dwrfStripeCacheOffsets = dwrfStripeCacheWriter.map(DwrfStripeCacheWriter::getOffsets);
         Footer footer = new Footer(
                 numberOfRows,
                 rowGroupMaxRowCount,
@@ -772,9 +762,7 @@ public class OrcWriter
                         .collect(toList()),
                 orcTypes,
                 ImmutableList.copyOf(unencryptedStats),
-                userMetadata,
-                dwrfEncryption,
-                dwrfStripeCacheOffsets);
+                userMetadata);
 
         closedStripes.clear();
         closedStripesRetainedBytes = 0;
@@ -787,8 +775,7 @@ public class OrcWriter
                 footerSlice.length(),
                 metadataSlice.length(),
                 columnWriterOptions.getCompressionKind(),
-                columnWriterOptions.getCompressionMaxBufferSize(),
-                dwrfStripeCacheData);
+                columnWriterOptions.getCompressionMaxBufferSize());
         outputData.add(createDataOutput(postscriptSlice));
         outputData.add(createDataOutput(Slices.wrappedBuffer((byte) postscriptSlice.length())));
         return outputData;
@@ -801,40 +788,40 @@ public class OrcWriter
             return;
         }
         ColumnStatistics columnStatistics = allStats.get(index);
-        if (dwrfEncryptionInfo.getGroupByNodeId(index).isPresent()) {
-            int group = dwrfEncryptionInfo.getGroupByNodeId(index).get();
-            boolean isRootNode = dwrfWriterEncryption.get().getWriterEncryptionGroups().get(group).getNodes().contains(index);
-            verify(isRootNode && nodeAndSubNodeStats.isEmpty() || nodeAndSubNodeStats.size() == 1 && nodeAndSubNodeStats.get(group) != null,
-                    "nodeAndSubNodeStats should only be present for subnodes of a group");
-            nodeAndSubNodeStats.computeIfAbsent(group, x -> new ArrayList<>()).add(columnStatistics);
-            unencryptedStats.add(new ColumnStatistics(
-                    columnStatistics.getNumberOfValues(),
-                    null,
-                    columnStatistics.hasRawSize() ? columnStatistics.getRawSize() : null,
-                    columnStatistics.hasStorageSize() ? columnStatistics.getStorageSize() : null));
-            for (Integer fieldIndex : orcTypes.get(index).getFieldTypeIndexes()) {
-                addStatsRecursive(allStats, fieldIndex, nodeAndSubNodeStats, unencryptedStats, encryptedStats);
-            }
-            if (isRootNode) {
-                Slice encryptedFileStatistics = toEncryptedFileStatistics(nodeAndSubNodeStats.get(group), group);
-                encryptedStats.computeIfAbsent(group, x -> new HashMap<>()).put(index, encryptedFileStatistics);
-            }
-        }
-        else {
-            unencryptedStats.add(columnStatistics);
-            for (Integer fieldIndex : orcTypes.get(index).getFieldTypeIndexes()) {
-                addStatsRecursive(allStats, fieldIndex, new HashMap<>(), unencryptedStats, encryptedStats);
-            }
-        }
+//        if (dwrfEncryptionInfo.getGroupByNodeId(index).isPresent()) {
+//            int group = dwrfEncryptionInfo.getGroupByNodeId(index).get();
+//            boolean isRootNode = dwrfWriterEncryption.get().getWriterEncryptionGroups().get(group).getNodes().contains(index);
+//            verify(isRootNode && nodeAndSubNodeStats.isEmpty() || nodeAndSubNodeStats.size() == 1 && nodeAndSubNodeStats.get(group) != null,
+//                    "nodeAndSubNodeStats should only be present for subnodes of a group");
+//            nodeAndSubNodeStats.computeIfAbsent(group, x -> new ArrayList<>()).add(columnStatistics);
+//            unencryptedStats.add(new ColumnStatistics(
+//                    columnStatistics.getNumberOfValues(),
+//                    null,
+//                    columnStatistics.hasRawSize() ? columnStatistics.getRawSize() : null,
+//                    columnStatistics.hasStorageSize() ? columnStatistics.getStorageSize() : null));
+//            for (Integer fieldIndex : orcTypes.get(index).getFieldTypeIndexes()) {
+//                addStatsRecursive(allStats, fieldIndex, nodeAndSubNodeStats, unencryptedStats, encryptedStats);
+//            }
+//            if (isRootNode) {
+//                Slice encryptedFileStatistics = toEncryptedFileStatistics(nodeAndSubNodeStats.get(group), group);
+//                encryptedStats.computeIfAbsent(group, x -> new HashMap<>()).put(index, encryptedFileStatistics);
+//            }
+//        }
+//        else {
+//            unencryptedStats.add(columnStatistics);
+//            for (Integer fieldIndex : orcTypes.get(index).getFieldTypeIndexes()) {
+//                addStatsRecursive(allStats, fieldIndex, new HashMap<>(), unencryptedStats, encryptedStats);
+//            }
+//        }
     }
 
     private Slice toEncryptedFileStatistics(List<ColumnStatistics> statsFromRoot, int groupId)
             throws IOException
     {
-        DwrfProto.FileStatistics fileStatistics = toFileStatistics(statsFromRoot);
-        DwrfDataEncryptor dwrfDataEncryptor = dwrfEncryptionInfo.getEncryptorByGroupId(groupId);
-        OrcOutputBuffer buffer = new OrcOutputBuffer(columnWriterOptions, Optional.of(dwrfDataEncryptor));
-        fileStatistics.writeTo(buffer);
+//        DwrfProto.FileStatistics fileStatistics = toFileStatistics(statsFromRoot);
+//        DwrfDataEncryptor dwrfDataEncryptor = dwrfEncryptionInfo.getEncryptorByGroupId(groupId);
+        OrcOutputBuffer buffer = new OrcOutputBuffer(columnWriterOptions);
+//        fileStatistics.writeTo(buffer);
         buffer.close();
         DynamicSliceOutput output = new DynamicSliceOutput(toIntExact(buffer.getOutputDataSize()));
         buffer.writeDataTo(output);
@@ -853,14 +840,14 @@ public class OrcWriter
     {
         checkState(validationBuilder != null, "validation is not enabled");
         ImmutableMap.Builder<Integer, Slice> intermediateKeyMetadata = ImmutableMap.builder();
-        if (dwrfWriterEncryption.isPresent()) {
-            List<WriterEncryptionGroup> writerEncryptionGroups = dwrfWriterEncryption.get().getWriterEncryptionGroups();
-            for (int i = 0; i < writerEncryptionGroups.size(); i++) {
-                for (Integer node : writerEncryptionGroups.get(i).getNodes()) {
-                    intermediateKeyMetadata.put(node, writerEncryptionGroups.get(i).getIntermediateKeyMetadata());
-                }
-            }
-        }
+//        if (dwrfWriterEncryption.isPresent()) {
+//            List<WriterEncryptionGroup> writerEncryptionGroups = dwrfWriterEncryption.get().getWriterEncryptionGroups();
+//            for (int i = 0; i < writerEncryptionGroups.size(); i++) {
+//                for (Integer node : writerEncryptionGroups.get(i).getNodes()) {
+//                    intermediateKeyMetadata.put(node, writerEncryptionGroups.get(i).getIntermediateKeyMetadata());
+//                }
+//            }
+//        }
 
         validateFile(
                 validationBuilder.build(),
@@ -872,9 +859,7 @@ public class OrcWriter
                         .withMaxMergeDistance(new DataSize(1, MEGABYTE))
                         .withTinyStripeThreshold(new DataSize(8, MEGABYTE))
                         .withMaxBlockSize(new DataSize(16, MEGABYTE))
-                        .build(),
-                dwrfEncryptionProvider,
-                DwrfKeyProvider.of(intermediateKeyMetadata.build()));
+                        .build());
     }
 
     public long getFileRowCount()

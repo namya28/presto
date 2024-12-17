@@ -42,7 +42,6 @@ import static com.facebook.presto.common.type.VarbinaryType.VARBINARY;
 import static com.facebook.presto.orc.DwrfEncryptionProvider.NO_ENCRYPTION;
 import static com.facebook.presto.orc.NoOpOrcWriterStats.NOOP_WRITER_STATS;
 import static com.facebook.presto.orc.NoopOrcAggregatedMemoryContext.NOOP_ORC_AGGREGATED_MEMORY_CONTEXT;
-import static com.facebook.presto.orc.OrcTester.Format.DWRF;
 import static com.facebook.presto.orc.OrcTester.HIVE_STORAGE_TIME_ZONE;
 import static io.airlift.units.DataSize.Unit.KILOBYTE;
 import static io.airlift.units.DataSize.Unit.MEGABYTE;
@@ -61,7 +60,6 @@ public class TestMaxSliceReadSize
         try (TempFile tempFile = new TempFile()) {
             OrcTester.writeOrcColumnsPresto(
                     tempFile.getFile(),
-                    DWRF,
                     CompressionKind.NONE,
                     Optional.empty(),
                     ImmutableList.of(VARBINARY),

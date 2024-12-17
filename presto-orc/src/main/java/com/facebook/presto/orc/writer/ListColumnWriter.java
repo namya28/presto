@@ -76,7 +76,6 @@ public class ListColumnWriter
             int column,
             int sequence,
             ColumnWriterOptions columnWriterOptions,
-            Optional<DwrfDataEncryptor> dwrfEncryptor,
             OrcEncoding orcEncoding,
             ColumnWriter elementWriter,
             MetadataWriter metadataWriter)
@@ -89,9 +88,9 @@ public class ListColumnWriter
         this.compressed = columnWriterOptions.getCompressionKind() != NONE;
         this.columnEncoding = new ColumnEncoding(orcEncoding == DWRF ? DIRECT : DIRECT_V2, 0);
         this.elementWriter = requireNonNull(elementWriter, "elementWriter is null");
-        this.lengthStream = createLengthOutputStream(columnWriterOptions, dwrfEncryptor, orcEncoding);
-        this.presentStream = new PresentOutputStream(columnWriterOptions, dwrfEncryptor);
-        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions, dwrfEncryptor);
+        this.lengthStream = createLengthOutputStream(columnWriterOptions, orcEncoding);
+        this.presentStream = new PresentOutputStream(columnWriterOptions);
+        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions);
     }
 
     @Override

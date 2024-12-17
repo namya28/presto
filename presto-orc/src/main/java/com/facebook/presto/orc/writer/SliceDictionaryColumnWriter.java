@@ -69,15 +69,14 @@ public class SliceDictionaryColumnWriter
             int sequence,
             Type type,
             ColumnWriterOptions columnWriterOptions,
-            Optional<DwrfDataEncryptor> dwrfEncryptor,
             OrcEncoding orcEncoding,
             MetadataWriter metadataWriter)
     {
-        super(column, sequence, columnWriterOptions, dwrfEncryptor, orcEncoding, metadataWriter);
+        super(column, sequence, columnWriterOptions, orcEncoding, metadataWriter);
         checkArgument(type instanceof AbstractVariableWidthType, "Not an instance of AbstractVariableWidthType");
         this.type = (AbstractVariableWidthType) type;
-        this.dictionaryDataStream = new ByteArrayOutputStream(columnWriterOptions, dwrfEncryptor, Stream.StreamKind.DICTIONARY_DATA);
-        this.dictionaryLengthStream = createLengthOutputStream(columnWriterOptions, dwrfEncryptor, orcEncoding);
+        this.dictionaryDataStream = new ByteArrayOutputStream(columnWriterOptions, Stream.StreamKind.DICTIONARY_DATA);
+        this.dictionaryLengthStream = createLengthOutputStream(columnWriterOptions, orcEncoding);
         this.stringStatisticsLimitInBytes = columnWriterOptions.getStringStatisticsLimit();
         this.statisticsBuilder = newStringStatisticsBuilder();
         this.sortDictionaryKeys = columnWriterOptions.isStringDictionarySortingEnabled();
@@ -364,8 +363,8 @@ public class SliceDictionaryColumnWriter
     {
         columnEncoding = null;
         dictionary = new SliceDictionaryBuilder(EXPECTED_ENTRIES);
-        dictionaryDataStream = new ByteArrayOutputStream(columnWriterOptions, dwrfEncryptor, Stream.StreamKind.DICTIONARY_DATA);
-        dictionaryLengthStream = createLengthOutputStream(columnWriterOptions, dwrfEncryptor, orcEncoding);
+        dictionaryDataStream = new ByteArrayOutputStream(columnWriterOptions, Stream.StreamKind.DICTIONARY_DATA);
+        dictionaryLengthStream = createLengthOutputStream(columnWriterOptions, orcEncoding);
         statisticsBuilder = newStringStatisticsBuilder();
     }
 
@@ -378,7 +377,7 @@ public class SliceDictionaryColumnWriter
     protected ColumnWriter createDirectColumnWriter()
     {
         if (directColumnWriter == null) {
-            directColumnWriter = new SliceDirectColumnWriter(column, sequence, type, columnWriterOptions, dwrfEncryptor, orcEncoding, this::newStringStatisticsBuilder, metadataWriter);
+            directColumnWriter = new SliceDirectColumnWriter(column, sequence, type, columnWriterOptions, orcEncoding, this::newStringStatisticsBuilder, metadataWriter);
         }
         return directColumnWriter;
     }

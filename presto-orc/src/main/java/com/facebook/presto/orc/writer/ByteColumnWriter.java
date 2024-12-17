@@ -67,20 +67,19 @@ public class ByteColumnWriter
 
     private boolean closed;
 
-    public ByteColumnWriter(int column, int sequence, Type type, ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor, MetadataWriter metadataWriter)
+    public ByteColumnWriter(int column, int sequence, Type type, ColumnWriterOptions columnWriterOptions, MetadataWriter metadataWriter)
     {
         checkArgument(column >= 0, "column is negative");
         checkArgument(sequence >= 0, "sequence is negative");
         requireNonNull(columnWriterOptions, "columnWriterOptions is null");
-        requireNonNull(dwrfEncryptor, "dwrfEncryptor is null");
         requireNonNull(metadataWriter, "metadataWriter is null");
         this.column = column;
         this.sequence = sequence;
         this.type = requireNonNull(type, "type is null");
         this.compressed = columnWriterOptions.getCompressionKind() != NONE;
-        this.dataStream = new ByteOutputStream(columnWriterOptions, dwrfEncryptor);
-        this.presentStream = new PresentOutputStream(columnWriterOptions, dwrfEncryptor);
-        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions, dwrfEncryptor);
+        this.dataStream = new ByteOutputStream(columnWriterOptions);
+        this.presentStream = new PresentOutputStream(columnWriterOptions);
+        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions);
         this.statisticsBuilder = new IntegerStatisticsBuilder();
     }
 

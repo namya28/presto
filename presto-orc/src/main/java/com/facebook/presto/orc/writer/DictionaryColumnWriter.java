@@ -66,7 +66,6 @@ public abstract class DictionaryColumnWriter
     protected final int column;
     protected final int sequence;
     protected final ColumnWriterOptions columnWriterOptions;
-    protected final Optional<DwrfDataEncryptor> dwrfEncryptor;
     protected final OrcEncoding orcEncoding;
     protected final MetadataWriter metadataWriter;
     protected long rawSize;
@@ -93,7 +92,6 @@ public abstract class DictionaryColumnWriter
             int column,
             int sequence,
             ColumnWriterOptions columnWriterOptions,
-            Optional<DwrfDataEncryptor> dwrfEncryptor,
             OrcEncoding orcEncoding,
             MetadataWriter metadataWriter)
     {
@@ -102,13 +100,12 @@ public abstract class DictionaryColumnWriter
         this.column = column;
         this.sequence = sequence;
         this.columnWriterOptions = requireNonNull(columnWriterOptions, "columnWriterOptions is null");
-        this.dwrfEncryptor = requireNonNull(dwrfEncryptor, "dwrfEncryptor is null");
         this.orcEncoding = requireNonNull(orcEncoding, "orcEncoding is null");
-        this.compressedMetadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions, dwrfEncryptor);
+        this.compressedMetadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions);
         this.preserveDirectEncodingStripeCount = columnWriterOptions.getPreserveDirectEncodingStripeCount();
 
-        this.dataStream = createDataOutputStream(columnWriterOptions, dwrfEncryptor, orcEncoding);
-        this.presentStream = new PresentOutputStream(columnWriterOptions, dwrfEncryptor);
+        this.dataStream = createDataOutputStream(columnWriterOptions, orcEncoding);
+        this.presentStream = new PresentOutputStream(columnWriterOptions);
         this.metadataWriter = requireNonNull(metadataWriter, "metadataWriter is null");
         this.rowGroupIndexes = new int[EXPECTED_ROW_GROUP_SEGMENT_SIZE];
     }
@@ -285,7 +282,7 @@ public abstract class DictionaryColumnWriter
         // this a new PresentStream, so one writer is responsible for one present stream.
         movePresentStreamToDirectWriter(presentStream);
         updateRawSizeInDirectWriter(rawSize);
-        presentStream = new PresentOutputStream(columnWriterOptions, dwrfEncryptor);
+        presentStream = new PresentOutputStream(columnWriterOptions);
 
         // free the dictionary
         rawBytesEstimate = 0;

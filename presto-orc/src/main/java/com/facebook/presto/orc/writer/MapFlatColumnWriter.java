@@ -91,7 +91,6 @@ public class MapFlatColumnWriter
     private final int valueNodeIndex;
     private final Type keyType;
     private final ColumnWriterOptions columnWriterOptions;
-    private final Optional<DwrfDataEncryptor> dwrfEncryptor;
     private final boolean compressed;
     private final PresentOutputStream presentStream;
     private final CompressedMetadataWriter metadataWriter;
@@ -136,7 +135,6 @@ public class MapFlatColumnWriter
             Type valueType,
             Supplier<StatisticsBuilder> keyStatisticsBuilderSupplier,
             ColumnWriterOptions columnWriterOptions,
-            Optional<DwrfDataEncryptor> dwrfEncryptor,
             MetadataWriter metadataWriter,
             IntFunction<ColumnWriter> valueWriterFactory,
             Supplier<Map<Integer, ColumnStatistics>> emptyValueColumnStatisticsSupplier)
@@ -156,14 +154,13 @@ public class MapFlatColumnWriter
         this.mapStatsEnabled = columnWriterOptions.isMapStatisticsEnabled();
 
         this.columnWriterOptions = requireNonNull(columnWriterOptions, "columnWriterOptions is null");
-        this.dwrfEncryptor = requireNonNull(dwrfEncryptor, "dwrfEncryptor is null");
         this.keyManager = getKeyManager(keyType, keyStatisticsBuilderSupplier);
         this.valueWriterFactory = requireNonNull(valueWriterFactory, "valueWriterFactory is null");
         this.emptyValueColumnStatisticsSupplier = requireNonNull(emptyValueColumnStatisticsSupplier, "emptyValueColumnStatisticsSupplier is null");
 
         this.compressed = columnWriterOptions.getCompressionKind() != NONE;
-        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions, dwrfEncryptor);
-        this.presentStream = new PresentOutputStream(columnWriterOptions, dwrfEncryptor);
+        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions);
+        this.presentStream = new PresentOutputStream(columnWriterOptions);
     }
 
     @Override

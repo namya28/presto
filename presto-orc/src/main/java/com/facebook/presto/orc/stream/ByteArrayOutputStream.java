@@ -45,14 +45,14 @@ public class ByteArrayOutputStream
 
     private boolean closed;
 
-    public ByteArrayOutputStream(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor)
+    public ByteArrayOutputStream(ColumnWriterOptions columnWriterOptions)
     {
-        this(columnWriterOptions, dwrfEncryptor, DATA);
+        this(columnWriterOptions, DATA);
     }
 
-    public ByteArrayOutputStream(ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor, StreamKind streamKind)
+    public ByteArrayOutputStream(ColumnWriterOptions columnWriterOptions, StreamKind streamKind)
     {
-        this.buffer = new OrcOutputBuffer(columnWriterOptions, dwrfEncryptor);
+        this.buffer = new OrcOutputBuffer(columnWriterOptions);
         this.streamKind = streamKind;
     }
 

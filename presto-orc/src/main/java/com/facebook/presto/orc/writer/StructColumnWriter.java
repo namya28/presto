@@ -71,7 +71,6 @@ public class StructColumnWriter
             int column,
             int sequence,
             ColumnWriterOptions columnWriterOptions,
-            Optional<DwrfDataEncryptor> dwrfEncryptor,
             List<ColumnWriter> structFields,
             MetadataWriter metadataWriter)
     {
@@ -82,8 +81,8 @@ public class StructColumnWriter
         this.sequence = sequence;
         this.compressed = columnWriterOptions.getCompressionKind() != NONE;
         this.structFields = ImmutableList.copyOf(requireNonNull(structFields, "structFields is null"));
-        this.presentStream = new PresentOutputStream(columnWriterOptions, dwrfEncryptor);
-        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions, dwrfEncryptor);
+        this.presentStream = new PresentOutputStream(columnWriterOptions);
+        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions);
     }
 
     @Override

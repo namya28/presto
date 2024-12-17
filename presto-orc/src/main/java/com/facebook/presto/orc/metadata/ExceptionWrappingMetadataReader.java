@@ -70,14 +70,12 @@ public class ExceptionWrappingMetadataReader
     @Override
     public Footer readFooter(HiveWriterVersion hiveWriterVersion,
             InputStream inputStream,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
-            DwrfKeyProvider dwrfKeyProvider,
             OrcDataSource orcDataSource,
             Optional<OrcDecompressor> decompressor)
             throws OrcCorruptionException
     {
         try {
-            return delegate.readFooter(hiveWriterVersion, inputStream, dwrfEncryptionProvider, dwrfKeyProvider, orcDataSource, decompressor);
+            return delegate.readFooter(hiveWriterVersion, inputStream, orcDataSource, decompressor);
         }
         catch (IOException | RuntimeException e) {
             throw propagate(e, "Invalid file footer");

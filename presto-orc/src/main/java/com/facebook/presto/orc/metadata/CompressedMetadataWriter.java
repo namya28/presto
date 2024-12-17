@@ -31,10 +31,10 @@ public class CompressedMetadataWriter
     private final MetadataWriter metadataWriter;
     private final OrcOutputBuffer buffer;
 
-    public CompressedMetadataWriter(MetadataWriter metadataWriter, ColumnWriterOptions columnWriterOptions, Optional<DwrfDataEncryptor> dwrfEncryptor)
+    public CompressedMetadataWriter(MetadataWriter metadataWriter, ColumnWriterOptions columnWriterOptions)
     {
         this.metadataWriter = requireNonNull(metadataWriter, "metadataWriter is null");
-        this.buffer = new OrcOutputBuffer(columnWriterOptions, dwrfEncryptor);
+        this.buffer = new OrcOutputBuffer(columnWriterOptions);
     }
 
     public List<Integer> getOrcMetadataVersion()
@@ -42,24 +42,24 @@ public class CompressedMetadataWriter
         return metadataWriter.getOrcMetadataVersion();
     }
 
-    public Slice writePostscript(int footerLength, int metadataLength, CompressionKind compression, int compressionBlockSize, Optional<DwrfStripeCacheData> dwrfStripeCacheData)
+    public Slice writePostscript(int footerLength, int metadataLength, CompressionKind compression, int compressionBlockSize)
             throws IOException
     {
         // postscript is not compressed
         DynamicSliceOutput output = new DynamicSliceOutput(64);
-        metadataWriter.writePostscript(output, footerLength, metadataLength, compression, compressionBlockSize, dwrfStripeCacheData);
+        metadataWriter.writePostscript(output, footerLength, metadataLength, compression, compressionBlockSize);
         return output.slice();
     }
 
-    public Slice writeDwrfStripeCache(Optional<DwrfStripeCacheData> dwrfStripeCacheData)
-            throws IOException
-    {
-        // DWRF stripe cache is already compressed
-        int size = dwrfStripeCacheData.map(DwrfStripeCacheData::getDwrfStripeCacheSize).orElse(0);
-        DynamicSliceOutput output = new DynamicSliceOutput(size);
-        metadataWriter.writeDwrfStripeCache(output, dwrfStripeCacheData);
-        return output.slice();
-    }
+//    public Slice writeDwrfStripeCache(Optional<DwrfStripeCacheData> dwrfStripeCacheData)
+//            throws IOException
+//    {
+//        // DWRF stripe cache is already compressed
+//        int size = dwrfStripeCacheData.map(DwrfStripeCacheData::getDwrfStripeCacheSize).orElse(0);
+//        DynamicSliceOutput output = new DynamicSliceOutput(size);
+//        metadataWriter.writeDwrfStripeCache(output, dwrfStripeCacheData);
+//        return output.slice();
+//    }
 
     public Slice writeMetadata(Metadata metadata)
             throws IOException

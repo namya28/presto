@@ -95,7 +95,6 @@ public class TimestampColumnWriter
             int sequence,
             Type type,
             ColumnWriterOptions columnWriterOptions,
-            Optional<DwrfDataEncryptor> dwrfEncryptor,
             OrcEncoding orcEncoding,
             DateTimeZone hiveStorageTimeZone,
             MetadataWriter metadataWriter)
@@ -103,7 +102,6 @@ public class TimestampColumnWriter
         checkArgument(column >= 0, "column is negative");
         checkArgument(sequence >= 0, "sequence is negative");
         requireNonNull(columnWriterOptions, "compression is null");
-        requireNonNull(dwrfEncryptor, "dwrfEncryptor is null");
         requireNonNull(metadataWriter, "metadataWriter is null");
         this.column = column;
         this.sequence = sequence;
@@ -122,16 +120,16 @@ public class TimestampColumnWriter
         }
         if (orcEncoding == DWRF) {
             this.columnEncoding = new ColumnEncoding(DIRECT, 0);
-            this.secondsStream = new LongOutputStreamV1(columnWriterOptions, dwrfEncryptor, true, DATA);
-            this.nanosStream = new LongOutputStreamV1(columnWriterOptions, dwrfEncryptor, false, SECONDARY);
+            this.secondsStream = new LongOutputStreamV1(columnWriterOptions, true, DATA);
+            this.nanosStream = new LongOutputStreamV1(columnWriterOptions, false, SECONDARY);
         }
         else {
             this.columnEncoding = new ColumnEncoding(DIRECT_V2, 0);
             this.secondsStream = new LongOutputStreamV2(columnWriterOptions, true, DATA);
             this.nanosStream = new LongOutputStreamV2(columnWriterOptions, false, SECONDARY);
         }
-        this.presentStream = new PresentOutputStream(columnWriterOptions, dwrfEncryptor);
-        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions, dwrfEncryptor);
+        this.presentStream = new PresentOutputStream(columnWriterOptions);
+        this.metadataWriter = new CompressedMetadataWriter(metadataWriter, columnWriterOptions);
         this.baseTimestampInSeconds = new DateTime(2015, 1, 1, 0, 0, requireNonNull(hiveStorageTimeZone, "hiveStorageTimeZone is null")).getMillis() / MILLIS_PER_SECOND;
     }
 

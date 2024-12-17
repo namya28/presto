@@ -73,16 +73,15 @@ public class OrcReader
     private final int bufferSize;
     private final CompressionKind compressionKind;
     private final Optional<OrcDecompressor> decompressor;
-    private final Optional<EncryptionLibrary> encryptionLibrary;
-    private final Map<Integer, Integer> dwrfEncryptionGroupMap;
-    private final Map<Integer, Slice> columnsToIntermediateKeys;
+    private final Optional<EncryptionLibrary> encryptionLibrary = null;
+//    private final Map<Integer, Integer> dwrfEncryptionGroupMap;
+//    private final Map<Integer, Slice> columnsToIntermediateKeys;
     private final Footer footer;
     private final Metadata metadata;
 
-    private final Optional<OrcWriteValidation> writeValidation;
-    private final Optional<OrcFileIntrospector> fileIntrospector;
+//    private final Optional<OrcWriteValidation> writeValidation;
+//    private final Optional<OrcFileIntrospector> fileIntrospector;
 
-    private final StripeMetadataSource stripeMetadataSource;
     private final OrcReaderOptions orcReaderOptions;
 
     private final boolean cacheable;
@@ -98,8 +97,6 @@ public class OrcReader
             OrcAggregatedMemoryContext aggregatedMemoryContext,
             OrcReaderOptions orcReaderOptions,
             boolean cacheable,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
-            DwrfKeyProvider dwrfKeyProvider,
             RuntimeStats runtimeStats)
             throws IOException
     {
@@ -108,14 +105,10 @@ public class OrcReader
                 orcEncoding,
                 orcFileTailSource,
                 StripeMetadataSourceFactory.of(stripeMetadataSource),
-                Optional.empty(),
                 aggregatedMemoryContext,
                 orcReaderOptions,
                 cacheable,
-                dwrfEncryptionProvider,
-                dwrfKeyProvider,
-                runtimeStats,
-                Optional.empty());
+                runtimeStats);
     }
 
     public OrcReader(
@@ -126,8 +119,8 @@ public class OrcReader
             OrcAggregatedMemoryContext aggregatedMemoryContext,
             OrcReaderOptions orcReaderOptions,
             boolean cacheable,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
-            DwrfKeyProvider dwrfKeyProvider,
+//            DwrfEncryptionProvider dwrfEncryptionProvider,
+//            DwrfKeyProvider dwrfKeyProvider,
             RuntimeStats runtimeStats)
             throws IOException
     {
@@ -140,8 +133,6 @@ public class OrcReader
                 aggregatedMemoryContext,
                 orcReaderOptions,
                 cacheable,
-                dwrfEncryptionProvider,
-                dwrfKeyProvider,
                 runtimeStats,
                 Optional.empty());
     }
@@ -155,8 +146,6 @@ public class OrcReader
             OrcAggregatedMemoryContext aggregatedMemoryContext,
             OrcReaderOptions orcReaderOptions,
             boolean cacheable,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
-            DwrfKeyProvider dwrfKeyProvider,
             RuntimeStats runtimeStats,
             Optional<OrcFileIntrospector> fileIntrospector)
             throws IOException
@@ -167,8 +156,6 @@ public class OrcReader
         requireNonNull(orcEncoding, "orcEncoding is null");
         this.runtimeStats = requireNonNull(runtimeStats, "runtimeStats is null");
         this.metadataReader = new ExceptionWrappingMetadataReader(orcDataSource.getId(), orcEncoding.createMetadataReader(runtimeStats, orcReaderOptions));
-        this.writeValidation = requireNonNull(writeValidation, "writeValidation is null");
-        this.fileIntrospector = requireNonNull(fileIntrospector, "fileIntrospector is null");
 
         OrcFileTail orcFileTail = orcFileTailSource.getOrcFileTail(orcDataSource, metadataReader, writeValidation, cacheable);
         fileIntrospector.ifPresent(introspector -> introspector.onFileTail(orcFileTail));
@@ -187,7 +174,7 @@ public class OrcReader
                 Optional.empty(),
                 aggregatedMemoryContext,
                 orcFileTail.getFooterSize())) {
-            this.footer = metadataReader.readFooter(hiveWriterVersion, footerInputStream, dwrfEncryptionProvider, dwrfKeyProvider, orcDataSource, decompressor);
+            this.footer = metadataReader.readFooter(hiveWriterVersion, footerInputStream, orcDataSource, decompressor);
         }
         if (this.footer.getTypes().isEmpty()) {
             throw new OrcCorruptionException(orcDataSource.getId(), "File has no columns");
@@ -195,24 +182,24 @@ public class OrcReader
 
         fileIntrospector.ifPresent(introspector -> introspector.onFileFooter(footer));
 
-        Optional<DwrfEncryption> encryption = footer.getEncryption();
-        if (encryption.isPresent()) {
-            requireNonNull(dwrfEncryptionProvider, "dwrfEncryptionProvider is null");
-            requireNonNull(dwrfKeyProvider, "dwrfKeyProvider is null");
-            validateEncryption(footer, this.orcDataSource.getId());
-            this.dwrfEncryptionGroupMap = createNodeToGroupMap(
-                    encryption.get().getEncryptionGroups().stream()
-                            .map(EncryptionGroup::getNodes)
-                            .collect(toImmutableList()),
-                    footer.getTypes());
-            this.encryptionLibrary = Optional.of(dwrfEncryptionProvider.getEncryptionLibrary(encryption.get().getKeyProvider()));
-            this.columnsToIntermediateKeys = ImmutableMap.copyOf(dwrfKeyProvider.getIntermediateKeys(footer.getTypes()));
-        }
-        else {
-            this.dwrfEncryptionGroupMap = ImmutableMap.of();
-            this.encryptionLibrary = Optional.empty();
-            this.columnsToIntermediateKeys = ImmutableMap.of();
-        }
+//        Optional<DwrfEncryption> encryption = footer.getEncryption();
+//        if (encryption.isPresent()) {
+//            requireNonNull(dwrfEncryptionProvider, "dwrfEncryptionProvider is null");
+//            requireNonNull(dwrfKeyProvider, "dwrfKeyProvider is null");
+//            validateEncryption(footer, this.orcDataSource.getId());
+//            this.dwrfEncryptionGroupMap = createNodeToGroupMap(
+//                    encryption.get().getEncryptionGroups().stream()
+//                            .map(EncryptionGroup::getNodes)
+//                            .collect(toImmutableList()),
+//                    footer.getTypes());
+//            this.encryptionLibrary = Optional.of(dwrfEncryptionProvider.getEncryptionLibrary(encryption.get().getKeyProvider()));
+//            this.columnsToIntermediateKeys = ImmutableMap.copyOf(dwrfKeyProvider.getIntermediateKeys(footer.getTypes()));
+//        }
+//        else {
+//            this.dwrfEncryptionGroupMap = ImmutableMap.of();
+//            this.encryptionLibrary = Optional.empty();
+//            this.columnsToIntermediateKeys = ImmutableMap.of();
+//        }
 
         try (InputStream metadataInputStream = new OrcInputStream(
                 orcDataSource.getId(),
@@ -235,39 +222,39 @@ public class OrcReader
 
         this.cacheable = requireNonNull(cacheable, "cacheable is null");
 
-        Optional<DwrfStripeCache> dwrfStripeCache = Optional.empty();
-        if (orcFileTail.getDwrfStripeCacheData().isPresent() && footer.getDwrfStripeCacheOffsets().isPresent()) {
-            DwrfStripeCacheData dwrfStripeCacheData = orcFileTail.getDwrfStripeCacheData().get();
-            DwrfStripeCache cache = dwrfStripeCacheData.buildDwrfStripeCache(footer.getStripes(), footer.getDwrfStripeCacheOffsets().get());
-            dwrfStripeCache = Optional.of(cache);
-        }
+//        Optional<DwrfStripeCache> dwrfStripeCache = Optional.empty();
+//        if (orcFileTail.getDwrfStripeCacheData().isPresent() && footer.getDwrfStripeCacheOffsets().isPresent()) {
+//            DwrfStripeCacheData dwrfStripeCacheData = orcFileTail.getDwrfStripeCacheData().get();
+//            DwrfStripeCache cache = dwrfStripeCacheData.buildDwrfStripeCache(footer.getStripes(), footer.getDwrfStripeCacheOffsets().get());
+//            dwrfStripeCache = Optional.of(cache);
+//        }
 
-        requireNonNull(stripeMetadataSourceFactory, "stripeMetadataSourceFactory is null");
-        this.stripeMetadataSource = requireNonNull(stripeMetadataSourceFactory.create(dwrfStripeCache), "stripeMetadataSource is null");
+//        requireNonNull(stripeMetadataSourceFactory, "stripeMetadataSourceFactory is null");
+//        this.stripeMetadataSource = requireNonNull(stripeMetadataSourceFactory.create(dwrfStripeCache), "stripeMetadataSource is null");
     }
 
-    @VisibleForTesting
-    public static void validateEncryption(Footer footer, OrcDataSourceId dataSourceId)
-    {
-        if (!footer.getEncryption().isPresent()) {
-            return;
-        }
-        DwrfEncryption dwrfEncryption = footer.getEncryption().get();
-        int encryptionGroupSize = dwrfEncryption.getEncryptionGroups().size();
-        List<StripeInformation> stripes = footer.getStripes();
-        if (!stripes.isEmpty() && encryptionGroupSize > 0 && stripes.get(0).getKeyMetadata().isEmpty()) {
-            throw new OrcCorruptionException(dataSourceId, "Stripe encryption keys are missing, but file is encrypted");
-        }
-        for (StripeInformation stripe : stripes) {
-            if (!stripe.getKeyMetadata().isEmpty() && stripe.getKeyMetadata().size() != encryptionGroupSize) {
-                throw new OrcCorruptionException(
-                        dataSourceId,
-                        "Number of stripe encryption keys did not match number of encryption groups.  Expected %s, but found %s",
-                        encryptionGroupSize,
-                        stripe.getKeyMetadata().size());
-            }
-        }
-    }
+//    @VisibleForTesting
+//    public static void validateEncryption(Footer footer, OrcDataSourceId dataSourceId)
+//    {
+//        if (!footer.getEncryption().isPresent()) {
+//            return;
+//        }
+//        DwrfEncryption dwrfEncryption = footer.getEncryption().get();
+//        int encryptionGroupSize = dwrfEncryption.getEncryptionGroups().size();
+//        List<StripeInformation> stripes = footer.getStripes();
+//        if (!stripes.isEmpty() && encryptionGroupSize > 0 && stripes.get(0).getKeyMetadata().isEmpty()) {
+//            throw new OrcCorruptionException(dataSourceId, "Stripe encryption keys are missing, but file is encrypted");
+//        }
+//        for (StripeInformation stripe : stripes) {
+//            if (!stripe.getKeyMetadata().isEmpty() && stripe.getKeyMetadata().size() != encryptionGroupSize) {
+//                throw new OrcCorruptionException(
+//                        dataSourceId,
+//                        "Number of stripe encryption keys did not match number of encryption groups.  Expected %s, but found %s",
+//                        encryptionGroupSize,
+//                        stripe.getKeyMetadata().size());
+//            }
+//        }
+//    }
 
     public List<String> getColumnNames()
     {
@@ -353,8 +340,6 @@ public class OrcReader
                 footer.getTypes(),
                 decompressor,
                 encryptionLibrary,
-                dwrfEncryptionGroupMap,
-                columnsToIntermediateKeys,
                 footer.getRowsInRowGroup(),
                 requireNonNull(hiveStorageTimeZone, "hiveStorageTimeZone is null"),
                 new OrcRecordReaderOptions(orcReaderOptions),
@@ -362,9 +347,7 @@ public class OrcReader
                 metadataReader,
                 footer.getUserMetadata(),
                 systemMemoryUsage.newOrcAggregatedMemoryContext(),
-                writeValidation,
                 initialBatchSize,
-                stripeMetadataSource,
                 cacheable,
                 runtimeStats);
     }
@@ -406,8 +389,6 @@ public class OrcReader
                 footer.getTypes(),
                 decompressor,
                 encryptionLibrary,
-                dwrfEncryptionGroupMap,
-                columnsToIntermediateKeys,
                 footer.getRowsInRowGroup(),
                 hiveStorageTimeZone,
                 new OrcRecordReaderOptions(orcReaderOptions),
@@ -417,10 +398,8 @@ public class OrcReader
                 systemMemoryUsage.newOrcAggregatedMemoryContext(),
                 writeValidation,
                 initialBatchSize,
-                stripeMetadataSource,
                 cacheable,
-                runtimeStats,
-                fileIntrospector);
+                runtimeStats);
     }
 
     private static OrcDataSource wrapWithCacheIfTiny(OrcDataSource dataSource, DataSize maxCacheSize, OrcAggregatedMemoryContext systemMemoryContext)
@@ -441,9 +420,7 @@ public class OrcReader
             List<Type> types,
             DateTimeZone hiveStorageTimeZone,
             OrcEncoding orcEncoding,
-            OrcReaderOptions orcReaderOptions,
-            DwrfEncryptionProvider dwrfEncryptionProvider,
-            DwrfKeyProvider dwrfKeyProvider)
+            OrcReaderOptions orcReaderOptions)
             throws OrcCorruptionException
     {
         ImmutableMap.Builder<Integer, Type> readTypes = ImmutableMap.builder();
@@ -460,8 +437,6 @@ public class OrcReader
                     NOOP_ORC_AGGREGATED_MEMORY_CONTEXT,
                     orcReaderOptions,
                     false,
-                    dwrfEncryptionProvider,
-                    dwrfKeyProvider,
                     new RuntimeStats(),
                     Optional.empty());
             try (OrcBatchRecordReader orcRecordReader = orcReader.createBatchRecordReader(
