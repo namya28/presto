@@ -87,7 +87,6 @@ import static com.facebook.presto.hive.HiveSessionProperties.isIntegerDictionary
 import static com.facebook.presto.hive.HiveSessionProperties.isStringDictionaryEncodingEnabled;
 import static com.facebook.presto.hive.HiveSessionProperties.isStringDictionarySortingEnabled;
 import static com.facebook.presto.hive.HiveType.toHiveTypes;
-import static com.facebook.presto.orc.OrcEncoding.DWRF;
 import static com.facebook.presto.orc.OrcEncoding.ORC;
 import static com.facebook.presto.orc.OrcWriterOptions.DEFAULT_MAX_FLATTENED_MAP_KEY_COUNT;
 import static com.facebook.presto.orc.metadata.KeyProvider.CRYPTO_SERVICE;
@@ -212,9 +211,9 @@ public class OrcFileWriterFactory
         if (OrcOutputFormat.class.getName().equals(storageFormat.getOutputFormat())) {
             orcEncoding = ORC;
         }
-        else if (com.facebook.hive.orc.OrcOutputFormat.class.getName().equals(storageFormat.getOutputFormat())) {
-            orcEncoding = DWRF;
-        }
+//        else if (org.apache.orc.mapreduce.OrcOutputFormat.class.getName().equals(storageFormat.getOutputFormat())) {
+//            orcEncoding = DWRF;
+//        }
         else {
             return Optional.empty();
         }

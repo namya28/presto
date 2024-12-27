@@ -13,7 +13,7 @@
  */
 package com.facebook.presto.hive.orc;
 
-import com.facebook.hive.orc.OrcSerde;
+//import com.facebook.hive.orc.OrcSerde;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.hive.EncryptionInformation;
 import com.facebook.presto.hive.FileFormatDataSourceStats;
@@ -102,7 +102,7 @@ public class DwrfAggregatedPageSourceFactory
             HiveFileContext hiveFileContext,
             Optional<EncryptionInformation> encryptionInformation)
     {
-        if (!OrcSerde.class.getName().equals(storage.getStorageFormat().getSerDe())) {
+        if (!org.apache.orc.OrcConf.class.getName().equals(storage.getStorageFormat().getSerDe())) {
             return Optional.empty();
         }
 

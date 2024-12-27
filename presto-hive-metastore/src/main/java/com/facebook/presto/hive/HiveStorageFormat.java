@@ -54,9 +54,9 @@ public enum HiveStorageFormat
             OrcOutputFormat.class.getName(),
             new DataSize(256, Unit.MEGABYTE)),
     DWRF(
-            com.facebook.hive.orc.OrcSerde.class.getName(),
-            com.facebook.hive.orc.OrcInputFormat.class.getName(),
-            com.facebook.hive.orc.OrcOutputFormat.class.getName(),
+            org.apache.orc.OrcConf.class.getName(),
+            org.apache.orc.mapreduce.OrcInputFormat.class.getName(),
+            org.apache.orc.mapreduce.OrcOutputFormat.class.getName(),
             new DataSize(256, Unit.MEGABYTE)),
     ALPHA(
             "com.facebook.alpha.AlphaSerde",

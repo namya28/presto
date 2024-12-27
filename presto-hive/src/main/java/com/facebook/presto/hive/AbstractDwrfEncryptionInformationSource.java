@@ -13,7 +13,7 @@
  */
 package com.facebook.presto.hive;
 
-import com.facebook.hive.orc.OrcSerde;
+//import com.facebook.hive.orc.OrcSerde;
 import com.facebook.presto.hive.ColumnEncryptionInformation.ColumnWithStructSubfield;
 import com.facebook.presto.hive.metastore.Partition;
 import com.facebook.presto.hive.metastore.Table;
@@ -131,10 +131,9 @@ public abstract class AbstractDwrfEncryptionInformationSource
 
     private static Optional<DwrfTableEncryptionProperties> getTableEncryptionProperties(Table table)
     {
-        if (!OrcSerde.class.getName().equals(table.getStorage().getStorageFormat().getSerDe())) {
+        if (!org.apache.orc.OrcConf.class.getName().equals(table.getStorage().getStorageFormat().getSerDe())) {
             return Optional.empty();
         }
-
         return fromHiveTableProperties(table.getParameters());
     }
 }
