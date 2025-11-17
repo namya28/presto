@@ -13,13 +13,13 @@
  */
 package com.facebook.presto.plugin.oracle;
 
+import com.facebook.presto.Session;
 import com.facebook.presto.testing.MaterializedResult;
 import com.facebook.presto.testing.QueryRunner;
 import com.facebook.presto.tests.AbstractTestIntegrationSmokeTest;
-import org.intellij.lang.annotations.Language;
 import org.testng.annotations.AfterClass;
-import org.testng.annotations.Test;
 
+import static com.facebook.presto.SystemSessionProperties.LEGACY_TIMESTAMP;
 import static com.facebook.presto.common.type.BigintType.BIGINT;
 import static com.facebook.presto.common.type.VarcharType.VARCHAR;
 import static com.facebook.presto.plugin.oracle.OracleQueryRunner.createOracleQueryRunner;
@@ -52,7 +52,6 @@ public class TestOracleIntegrationSmokeTest
         oracleServer.close();
     }
 
-    @Test
     @Override
     public void testDescribeTable()
     {
@@ -60,6 +59,7 @@ public class TestOracleIntegrationSmokeTest
                 .row("orderkey", "bigint", "", "", 19L, null, null)
                 .row("custkey", "bigint", "", "", 19L, null, null)
                 .row("orderstatus", "varchar(1)", "", "", null, null, 1L)
+                .row("totalprice", "double", "", "", 53L, null, null)
                 .row("orderdate", "timestamp", "", "", null, null, null)
                 .row("orderpriority", "varchar(15)", "", "", null, null, 15L)
                 .row("clerk", "varchar(15)", "", "", null, null, 15L)
@@ -70,69 +70,30 @@ public class TestOracleIntegrationSmokeTest
         assertEquals(actualColumns, expectedColumns);
     }
 
-    @Test
-    @Override
-    public void testAggregateSingleColumn()
-    {
-        assertQuery("SELECT SUM(orderkey) FROM orders");
-        assertQuery("SELECT MAX(comment) FROM orders");
-    }
-
-    @Test
-    @Override
-    public void testColumnsInReverseOrder()
-    {
-        assertQuery("SELECT shippriority, clerk FROM orders");
-    }
-
-    @Test
     @Override
     public void testMultipleRangesPredicate()
     {
-        //Overriding as column totalprice does not exist
+        Session session = Session.builder(getSession())
+                .setSystemProperty(LEGACY_TIMESTAMP, "false")
+                .build();
+        assertQuery(session, "SELECT * FROM orders WHERE orderkey BETWEEN 10 AND 50 OR orderkey BETWEEN 100 AND 150");
     }
 
-    @Test
     @Override
     public void testRangePredicate()
     {
-        //Overriding as column totalprice does not exist
+        Session session = Session.builder(getSession())
+                .setSystemProperty(LEGACY_TIMESTAMP, "false")
+                .build();
+        assertQuery(session, "SELECT * FROM orders WHERE orderkey BETWEEN 10 AND 50");
     }
 
-    @Test
     @Override
     public void testSelectAll()
     {
-        //Overriding as column totalprice does not exist
-    }
-
-    @Test
-    @Override
-    public void testSelectInformationSchemaColumns()
-    {
-        String catalog = getSession().getCatalog().get();
-        String schema = getSession().getSchema().get();
-        String schemaPattern = schema.replaceAll(".$", "_");
-
-        @Language("SQL") String ordersTableWithColumns = "VALUES " +
-                "('orders', 'orderkey'), " +
-                "('orders', 'custkey'), " +
-                "('orders', 'orderstatus'), " +
-                "('orders', 'orderdate'), " +
-                "('orders', 'orderpriority'), " +
-                "('orders', 'clerk'), " +
-                "('orders', 'shippriority'), " +
-                "('orders', 'comment')";
-
-        assertQuery("SELECT table_schema FROM information_schema.columns WHERE table_schema = '" + schema + "' GROUP BY table_schema", "VALUES '" + schema + "'");
-        assertQuery("SELECT table_name FROM information_schema.columns WHERE table_name = 'orders' GROUP BY table_name", "VALUES 'orders'");
-        assertQuery("SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '" + schema + "' AND table_name = 'orders'", ordersTableWithColumns);
-        assertQuery("SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '" + schema + "' AND table_name LIKE '%rders'", ordersTableWithColumns);
-        assertQuery("SELECT table_name, column_name FROM information_schema.columns WHERE table_schema LIKE '" + schemaPattern + "' AND table_name LIKE '_rder_'", ordersTableWithColumns);
-        assertQuery(
-                "SELECT table_name, column_name FROM information_schema.columns " +
-                        "WHERE table_catalog = '" + catalog + "' AND table_schema = '" + schema + "' AND table_name LIKE '%orders%'",
-                ordersTableWithColumns);
-        assertQuery("SELECT column_name FROM information_schema.columns WHERE table_catalog = 'something_else'", "SELECT '' WHERE false");
+        Session session = Session.builder(getSession())
+                .setSystemProperty(LEGACY_TIMESTAMP, "false")
+                .build();
+        assertQuery(session, "SELECT * FROM orders");
     }
 }
